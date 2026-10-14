@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>不浪費一個人行動｜Demo</title>
+<style>
+:root{
+  --bg:#E9E0FF; --card:#FFFFFF; --ink:#1F1640; --muted:#5E5677; --line:#D6CBF7; --brand:#5B2BD9; --brand-deep:#3F1DA0; --gold:#F2B84B; --err:#B4232C;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#1C1238; --card:#251B4C; --ink:#F4F0FF; --muted:#B4AACD; --line:#3A2F66; --err:#FF8A8F; color-scheme:dark}
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;font-size:16px;line-height:1.7;display:grid;place-items:center;padding:24px}
+.card{width:min(420px,100%);background:var(--card);border:1px solid var(--line);border-radius:24px;padding:40px 36px;box-shadow:0 24px 60px rgba(63,29,160,.14)}
+.logo{width:96px;height:auto;display:block;background:#fff;border-radius:8px;padding:4px 6px;margin-left:-6px}
+h1{margin:24px 0 0;font-size:24px;font-weight:900;line-height:1.4}
+.sub{margin:8px 0 28px;color:var(--muted);font-size:15px}
+label{display:block;font-weight:700;font-size:15px;margin-bottom:8px}
+.row{display:flex;gap:8px}
+input{flex:1;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:16px}
+input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(91,43,217,.2)}
+.toggle{flex:none;min-width:48px;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:14px}
+button.go{margin-top:16px;width:100%;min-height:52px;border:0;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+button.go:hover{background:var(--brand-deep)}
+button.go:disabled{opacity:.7;cursor:progress}
+.msg{min-height:24px;margin:12px 0 0;font-size:14px;color:var(--err)}
+.foot{margin:20px 0 0;font-size:12px;color:var(--muted)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<main class="card">
+  <img class="logo" src="__LOGO__" alt="Lumo">
+  <h1>不浪費一個人行動</h1>
+  <p class="sub">這是提供給 PAC 的提案 Demo，請輸入密碼瀏覽。</p>
+  <form id="gate" autocomplete="off">
+    <label for="pw">密碼</label>
+    <div class="row">
+      <input id="pw" type="password" autocomplete="current-password" required autofocus>
+      <button type="button" class="toggle" id="show" aria-pressed="false" aria-label="顯示密碼">顯示</button>
+    </div>
+    <button class="go" type="submit" id="go">進入</button>
+    <p class="msg" id="msg" role="alert" aria-live="polite"></p>
+  </form>
+  <p class="foot">密碼只在你的瀏覽器中用來解鎖頁面，不會傳送到任何地方。</p>
+</main>
+<script type="application/json" id="payload">__PAYLOAD__</script>
+<script>
+(function(){
+  var P = JSON.parse(document.getElementById('payload').textContent);
+  var form = document.getElementById('gate'), pw = document.getElementById('pw');
+  var go = document.getElementById('go'), msg = document.getElementById('msg'), show = document.getElementById('show');
+  var KEY = 'ntw-demo-pass';
+
+  function b64(s){ var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+
+  function unlock(password){
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey'])
+      .then(function(m){
+        return crypto.subtle.deriveKey({ name:'PBKDF2', salt:b64(P.salt), iterations:P.iter, hash:'SHA-256' }, m, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+      })
+      .then(function(k){ return crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(P.iv) }, k, b64(P.data)); })
+      .then(function(buf){ return new TextDecoder().decode(buf); });
+  }
+
+  function render(html){
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  function attempt(password, remember){
+    go.disabled = true; go.textContent = '解鎖中…'; msg.textContent = '';
+    return unlock(password).then(function(html){
+      if (remember) { try { sessionStorage.setItem(KEY, password); } catch (e) {} }
+      render(html);
+    }).catch(function(){
+      try { sessionStorage.removeItem(KEY); } catch (e) {}
+      go.disabled = false; go.textContent = '進入';
+      msg.textContent = '密碼不正確，請再試一次。';
+      pw.select();
+    });
+  }
+
+  if (!window.crypto || !crypto.subtle) {
+    msg.textContent = '這個瀏覽器不支援解鎖功能，請改用最新版的 Chrome、Safari 或 Edge。';
+    go.disabled = true;
+    return;
+  }
+
+  show.addEventListener('click', function(){
+    var on = pw.type === 'password';
+    pw.type = on ? 'text' : 'password';
+    show.textContent = on ? '隱藏' : '顯示';
+    show.setAttribute('aria-pressed', on ? 'true' : 'false');
+    show.setAttribute('aria-label', on ? '隱藏密碼' : '顯示密碼');
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (!pw.value) { msg.textContent = '請輸入密碼。'; pw.focus(); return; }
+    attempt(pw.value, true);
+  });
+
+  // 同一個分頁內重新整理時，不用再輸入一次
+  var saved = null;
+  try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+  if (saved) attempt(saved, false);
+})();
+</script>
+</body>
+</html>
