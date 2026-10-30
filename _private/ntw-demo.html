@@ -1452,6 +1452,9 @@ html:has(.lead-dialog[open]){overflow:hidden}
       fetch('/api/public/contact-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         .then(function(res){
           if (!res.ok) throw res.status;
+          return res.json();
+        })
+        .then(function(result){
           submitted = true;
           form.querySelector('.formbody').style.display = 'none';
           form.querySelector('.done').style.display = 'block';
@@ -1460,7 +1463,7 @@ html:has(.lead-dialog[open]){overflow:hidden}
           if (location.origin === 'https://www.lumo-career.com' && document.querySelector('script[data-lumo-gtm]')) {
             try {
               window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({ event: 'generate_lead', campaign: 'no-one-wasted', form_id: form.id });
+              window.dataLayer.push({ event: 'generate_lead', site: 'lumo', event_id: result.trackingEventId || ('lead_' + result.contactRequestId), campaign: 'no-one-wasted', form_id: form.id });
             } catch (trackingError) {}
           }
         })

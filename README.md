@@ -54,8 +54,10 @@ node tools/encrypt.mjs _private/ntw-demo.html 新的密碼
 
 - 頁尾與浮動表單使用同源 `POST /api/public/contact-requests`，成功後才顯示已收到；驗證失敗、網路／HTTP 錯誤不顯示成功，429 顯示稍後再試。
 - 必須勾選隱私同意；正式部署需提供 `/landings/legal/privacy.html`。姓名、Email、公司、職稱、選填電話及諮詢主題送至 LUMO 留單 API，來源固定為 `website`／`landing:no-one-wasted`，後台「訪客留單」可查。
-- 成功後，在 `https://www.lumo-career.com` 且正式站 GTM Loader 已載入時，推送 `generate_lead`，只帶 `campaign: no-one-wasted` 與 `form_id`；不把聯絡資料放入 dataLayer。這不等於已串 Meta CAPI 或 Meta 已收到轉換。
+- 成功後，在 `https://www.lumo-career.com` 且正式站 GTM Loader 已載入時，推送 `generate_lead`，帶 `site: lumo`、`campaign: no-one-wasted`、`form_id` 與伺服器回覆的 `event_id`（Meta 範本的 `eventID` 請使用此值，與 CAPI 去重）；不把聯絡資料放入 dataLayer。這不等於已串 Meta CAPI 或 Meta 已收到轉換。
 - GTM Loader 與 CSP 由 LUMO 部署設定提供，本 repo 不存 CAPI Token 或其他憑證。API 與隱私頁不由 GitHub Pages 提供；不能直接將相對路徑改為正式站網址就當成跨域串接完成。
 - GitHub Pages 加密入口、簡中原始頁與簡中預覽維持原狀。本次只同步繁中正式來源；如要更新加密預覽，請持有原密碼的同仁先確定預覽環境的 API 路由，再依上方工具重新產生，避免把無後端的靜態預覽當成可收單網站。
 
 後續調整視覺時，請保留表單的 `name`、隱私同意、API 成功／失敗判斷與成功事件；將修改回合併至 LUMO 後，仍需走正式站建置與發布，GitHub PR 合併不會自動更新 LUMO。
+
+2026-10-30 補充：繁中來源已同步 LUMO 候選 `95b9ee089` 的 `site`／伺服器事件 ID。API 回覆 `trackingEventId`，舊版 API 則以 `lead_<contactRequestId>` 相容；CAPI 由 LUMO 後端設定與發布，本 repo 不保存 Pixel Token。
