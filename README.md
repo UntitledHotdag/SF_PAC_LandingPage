@@ -61,3 +61,5 @@ node tools/encrypt.mjs _private/ntw-demo.html 新的密碼
 後續調整視覺時，請保留表單的 `name`、隱私同意、API 成功／失敗判斷與成功事件；將修改回合併至 LUMO 後，仍需走正式站建置與發布，GitHub PR 合併不會自動更新 LUMO。
 
 2026-10-30 補充：繁中來源已同步 LUMO 候選 `95b9ee089` 的 `site`／伺服器事件 ID。API 回覆 `trackingEventId`，舊版 API 則以 `lead_<contactRequestId>` 相容；CAPI 由 LUMO 後端設定與發布，本 repo 不保存 Pixel Token。
+
+2026-10-30 發布狀態：LUMO 台灣已部署整合版本 `247cf97438e43f578e67b61b7907b8e169c0e807` 並啟用後端 CAPI；實際 PageView 已獲 Meta `events_received: 1`。留單 Lead 的交易成功與事件去重已通過隔離測試，未製造正式假留單。公開 GTM 容器仍待投手發布 Pixel 標籤，請將資料層 `event_id` 指定為 Meta `eventID`。
